@@ -1,17 +1,19 @@
 import express from 'express';
 import puppeteer from 'puppeteer-core';
-import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(cors());
+const BROWSERLESS_TOKEN = '2TPhAojC376ZCE40f72193441100febbbcb7e62456e0d5a69';
+
+app.use(express.static('public')); // This serves your frontend
 app.use(express.json());
 
-const BROWSERLESS_TOKEN = 'YOUR_API_TOKEN';
-let activeBrowser = null; // Variable to track the current session
+let activeBrowser = null;
 
-app.get('/get-browser-session', async (req, res) => {
+app.get('/api/session', async (req, res) => {
     try {
-        // Close any existing browser to save credits before starting a new one
         if (activeBrowser) await activeBrowser.close();
 
         activeBrowser = await puppeteer.connect({
@@ -28,19 +30,17 @@ app.get('/get-browser-session', async (req, res) => {
 
         res.json({ url: liveURL });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to start session' });
+        res.status(500).json({ error: error.message });
     }
 });
 
-// Endpoint to manually kill the session
-app.post('/kill-session', async (req, res) => {
+app.post('/api/kill', async (req, res) => {
     if (activeBrowser) {
         await activeBrowser.close();
         activeBrowser = null;
-        return res.json({ status: 'Session terminated' });
     }
-    res.json({ status: 'No active session' });
+    res.json({ status: 'closed' });
 });
 
-app.listen(3000, () => console.log('Server: http://localhost:3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`App running at http://localhost:${PORT}`));
