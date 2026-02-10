@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cloud Browser</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; }
+        iframe { width: 95%; height: 80vh; border: 1px solid #333; margin-top: 10px; border-radius: 8px; }
+        .controls { margin-bottom: 20px; }
+        button { padding: 10px 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Cloud Browser Instance</h1>
+    <div class="controls">
+        <button onclick="launchBrowser()" style="background: #28a745; color: white; border: none;">Launch Browser</button>
+        <button onclick="killBrowser()" style="background: #dc3545; color: white; border: none;">Stop Session</button>
+    </div>
+
+    <iframe id="browser-frame" src="about:blank"></iframe>
+
+    <script>
+        const frame = document.getElementById('browser-frame');
+
+        async function launchBrowser() {
+            const response = await fetch('http://localhost:3000/get-browser-session');
+            const data = await response.json();
+            if (data.url) {
+                frame.src = data.url; // The variable automatically sets the iframe src
+            }
+        }
+
+        async function killBrowser() {
+            await fetch('http://localhost:3000/kill-session', { method: 'POST' });
+            frame.src = "about:blank";
+            alert("Session Closed and Credits Saved.");
+        }
+    </script>
+</body>
+</html>
