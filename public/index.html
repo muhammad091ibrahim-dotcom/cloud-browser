@@ -1,60 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Cloud Browser Pro</title>
+    <title>Cloud Browser</title>
     <style>
-        body { margin: 0; font-family: system-ui; background: #1a1a1a; color: white; display: flex; flex-direction: column; height: 100vh; }
-        .toolbar { padding: 10px; display: flex; gap: 10px; background: #2d2d2d; align-items: center; }
-        button { padding: 8px 15px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; }
-        .launch { background: #00c853; color: white; }
-        .kill { background: #ff5252; color: white; }
-        .fullscreen { background: #2979ff; color: white; }
-        #browser-container { flex-grow: 1; position: relative; background: #000; }
+        body { margin: 0; background: #121212; color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        .nav { padding: 10px; background: #1f1f1f; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #333; }
+        #container { flex: 1; background: #000; position: relative; }
         iframe { width: 100%; height: 100%; border: none; }
+        button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-start { background: #00e676; color: #000; }
+        .btn-fs { background: #2979ff; color: #fff; }
+        .btn-stop { background: #ff5252; color: #fff; }
+        button:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
 
-    <div class="toolbar">
-        <button class="launch" onclick="launch()">Launch Session</button>
-        <button class="fullscreen" onclick="toggleFullscreen()">Fullscreen</button>
-        <button class="kill" onclick="kill()">End Session</button>
-        <span id="status" style="margin-left: auto; font-size: 0.8em; color: #aaa;">Ready</span>
+    <div class="nav">
+        <button class="btn-start" onclick="startSession()">🚀 Start Browser</button>
+        <button class="btn-fs" onclick="goFullscreen()">📺 Fullscreen</button>
+        <button class="btn-stop" onclick="stopSession()">🛑 Stop</button>
+        <div id="loader" style="display:none; margin-left:10px;">Connecting to cloud...</div>
     </div>
 
-    <div id="browser-container">
-        <iframe id="cloud-iframe" src="about:blank"></iframe>
+    <div id="container">
+        <iframe id="browser-view" src="about:blank"></iframe>
     </div>
 
     <script>
-        const iframe = document.getElementById('cloud-iframe');
-        const container = document.getElementById('browser-container');
-        const status = document.getElementById('status');
+        const iframe = document.getElementById('browser-view');
+        const loader = document.getElementById('loader');
 
-        async function launch() {
-            status.innerText = "Provisioning Cloud Browser...";
-            const res = await fetch('/api/session');
-            const data = await res.json();
-            if (data.url) {
-                iframe.src = data.url;
-                status.innerText = "Connected to Browserless";
-            }
+        async function startSession() {
+            loader.style.display = 'block';
+            try {
+                const res = await fetch('/api/session');
+                const data = await res.json();
+                if (data.url) {
+                    iframe.src = data.url;
+                }
+            } catch (e) { alert("Error connecting to server!"); }
+            loader.style.display = 'none';
         }
 
-        async function kill() {
+        async function stopSession() {
             await fetch('/api/kill', { method: 'POST' });
             iframe.src = "about:blank";
-            status.innerText = "Session Terminated";
         }
 
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                container.requestFullscreen().catch(err => {
-                    alert(`Error: ${err.message}`);
-                });
-            } else {
-                document.exitFullscreen();
+        function goFullscreen() {
+            const elem = document.getElementById('container');
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
             }
         }
     </script>
