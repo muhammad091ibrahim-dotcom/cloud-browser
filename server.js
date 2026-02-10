@@ -1,59 +1,50 @@
 import express from 'express';
 import puppeteer from 'puppeteer-core';
-import path from 'path';
 import { fileURLToPath } from 'url';
+import path from 'path';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
+const BROWSERLESS_TOKEN = '2TPhAojC376ZCE40f72193441100febbbcb7e62456e0d5a69';
 
-// Your API Token is now set
-const BROWSERLESS_TOKEN = '2TPhAojC376ZCE40f72193441100febbbcb7e62456e0d5a69'; 
-
-app.use(express.static('public')); 
 app.use(express.json());
 
-let activeBrowser = null;
+// This serves the HTML file when you go to http://localhost:3000
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
+// The API to start the cloud browser
 app.get('/api/session', async (req, res) => {
-    // Grabs the URL from the search bar variable, defaults to Google
-    const targetUrl = req.query.url || 'https://www.google.com';
+    const targetUrl = req.query.url || 'https://google.com';
+    console.log(`🚀 Launching cloud browser for: ${targetUrl}`);
 
     try {
-        // Kill previous session to save your credits
-        if (activeBrowser) await activeBrowser.close();
-
-        activeBrowser = await puppeteer.connect({
+        const browser = await puppeteer.connect({
             browserWSEndpoint: `wss://production-sfo.browserless.io?token=${BROWSERLESS_TOKEN}`
         });
 
-        const page = await activeBrowser.newPage();
-        
-        // Tells the cloud browser where to go first
-        await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
+        const page = await browser.newPage();
+        await page.goto(targetUrl, { waitUntil: 'networkidle2' });
 
         const cdp = await page.target().createCDPSession();
         const { liveURL } = await cdp.send('Browserless.liveURL', {
-            showBrowserInterface: true, // Shows the remote browser's tabs/address bar
-            timeout: 600000 // 10 minute session limit
+            showBrowserInterface: true,
+            timeout: 600000
         });
 
+        console.log("✅ Live URL ready!");
         res.json({ url: liveURL });
-    } catch (error) {
-        console.error("Browserless Error:", error);
-        res.status(500).json({ error: error.message });
+    } catch (err) {
+        console.error("❌ Error:", err.message);
+        res.status(500).json({ error: err.message });
     }
 });
 
-app.post('/api/kill', async (req, res) => {
-    if (activeBrowser) {
-        await activeBrowser.close();
-        activeBrowser = null;
-    }
-    res.json({ status: 'closed' });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`✅ Server is live!`);
-    console.log(`👉 Open http://localhost:${PORT} in your browser.`);
+app.listen(3000, () => {
+    console.log("-----------------------------------------");
+    console.log("LOCAL SERVER RUNNING AT: http://localhost:3000");
+    console.log("-----------------------------------------");
 });
