@@ -5,9 +5,11 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const BROWSERLESS_TOKEN = '2TPhAojC376ZCE40f72193441100febbbcb7e62456e0d5a69';
 
-app.use(express.static('public')); // This serves your frontend
+// REPLACE THIS with your actual token from browserless.io
+const BROWSERLESS_TOKEN = '2TPhAojC376ZCE40f72193441100febbbcb7e62456e0d5a69'; 
+
+app.use(express.static('public')); 
 app.use(express.json());
 
 let activeBrowser = null;
@@ -42,5 +44,6 @@ app.post('/api/kill', async (req, res) => {
     res.json({ status: 'closed' });
 });
 
+// Port 3000 for local, dynamic port for deployment
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`App running at http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
